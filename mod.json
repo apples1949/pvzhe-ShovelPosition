@@ -1,0 +1,152 @@
+{
+  "schemaVersion": 2,
+  "id": "shovelposition",
+  "name": "铲子 · 位置",
+  "version": "1.0.0",
+  "author": "apples1949",
+  "description": "把战斗界面左上角那把铲子搬到任何你想放的地方：战斗设置页里多一个「铲子 · 设置」按钮，打开后是独立浮层面板，第一行「位置」可选九宫格锚点（左上 / 中上 / … / 右下）或「自定义」百分比坐标（X / Y 滑动条），改动即时生效并写入配置。默认「自动（原位置）」= 完全不动，保持游戏原生位置。横屏竖屏通用一套设置，窗口拉伸 / 旋转后自动按新视口重算。只改铲子按钮的位置与显示，铲子的用法、冷却、判定、地图上跟随鼠标的铲子图标全部保持原样。",
+  "playInstructions": "1. 进任意有铲子的关卡（IZM / IZM2 里铲子本来就不出现，本 Mod 也不会凭空造一个）。\n2. 打开「选项 → 战斗设置」（设置植物 / 僵尸血条那一页）→ 右侧 Mod 按钮列的「铲子·设置」。\n3. 面板里第一行是「位置」：先选预设（左上 / 中上 / … / 右下，或「自定义」），选「自定义」后再拖 X / Y 滑动条。改动即时生效并写入配置（godot.log 会打一条「[ShovelPos] 配置已落盘：…」）。\n4. 第二行「启用位置调整」开关：关掉 = 铲子立刻回到游戏原生位置（配置页里的「启用铲子位置调整」是同一个开关）。\n5. 想恢复原样：把「位置」选回「自动（原位置）」，或直接关掉总开关。\n6. 点「关闭」，或点面板外的空白处，都能收起面板；再点一次入口按钮也能收起。",
+  "dependencies": [],
+  "conflicts": [],
+  "provides": {},
+  "overrides": {},
+  "scripts": [],
+  "settings": [
+    {
+      "key": "enabled",
+      "type": "bool",
+      "label": "启用铲子位置调整",
+      "group": "功能",
+      "description": "开（默认）= 按「位置」设置摆放铲子按钮。关 = 完全不动，铲子保持游戏原生位置（战斗中关掉会立刻搬回原位）。",
+      "applyMode": "immediate",
+      "affectsGameplay": false,
+      "default": true
+    },
+    {
+      "key": "landMode",
+      "type": "enum",
+      "label": "位置",
+      "group": "外观",
+      "description": "铲子按钮的位置（横屏竖屏通用）。auto = 完全不动（保持游戏原生位置）；九宫格 = 贴到屏幕对应角落；custom = 用下面的 X/Y 百分比。",
+      "applyMode": "immediate",
+      "affectsGameplay": false,
+      "default": "auto",
+      "options": [
+        {
+          "value": "auto",
+          "label": "自动（原位置）"
+        },
+        {
+          "value": "tl",
+          "label": "左上"
+        },
+        {
+          "value": "tc",
+          "label": "中上"
+        },
+        {
+          "value": "tr",
+          "label": "右上"
+        },
+        {
+          "value": "ml",
+          "label": "左中"
+        },
+        {
+          "value": "mc",
+          "label": "正中"
+        },
+        {
+          "value": "mr",
+          "label": "右中"
+        },
+        {
+          "value": "bl",
+          "label": "左下"
+        },
+        {
+          "value": "bc",
+          "label": "中下"
+        },
+        {
+          "value": "br",
+          "label": "右下"
+        },
+        {
+          "value": "custom",
+          "label": "自定义"
+        }
+      ]
+    },
+    {
+      "key": "landX",
+      "type": "int",
+      "label": "自定义 X(%)",
+      "group": "外观",
+      "default": 80,
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "description": "按钮左边缘位置，按屏幕宽度的百分比（0 = 最左，100 = 最右）。只在「位置」= 自定义时生效。",
+      "applyMode": "immediate",
+      "affectsGameplay": false,
+      "visibleWhen": {
+        "key": "landMode",
+        "op": "eq",
+        "value": "custom"
+      }
+    },
+    {
+      "key": "landY",
+      "type": "int",
+      "label": "自定义 Y(%)",
+      "group": "外观",
+      "default": 2,
+      "min": 0,
+      "max": 100,
+      "step": 1,
+      "description": "按钮上边缘位置，按屏幕高度的百分比（0 = 最上，100 = 最下）。只在「位置」= 自定义时生效。",
+      "applyMode": "immediate",
+      "affectsGameplay": false,
+      "visibleWhen": {
+        "key": "landMode",
+        "op": "eq",
+        "value": "custom"
+      }
+    },
+    {
+      "key": "enableLog",
+      "type": "bool",
+      "label": "输出诊断日志",
+      "group": "诊断",
+      "description": "排查问题时打开，会把运行状态写进 godot.log。平时关掉，不刷日志。",
+      "applyMode": "immediate",
+      "affectsGameplay": false,
+      "default": false
+    },
+    {
+      "key": "aboutChangelog",
+      "type": "text",
+      "label": "更新内容",
+      "group": "关于",
+      "content": "v1.0.0 · 2026-11-07\n新增：铲子按钮位置可调（九宫格锚点 / 自定义百分比 X·Y），改动即时生效并写入配置。\n新增：战斗设置页 Mod 按钮列的「铲子·设置」入口 → 本 Mod 独占浮层面板，第一行「位置」+ 第二行「启用位置调整」开关。\n新增：「自动（原位置）」= 完全不动，保持游戏原生位置；关掉总开关会立刻把铲子搬回原位。\n实现：把宿主的 ShovelManager（70×72 的 Control）从顶部道具栏（HBoxContainer 托管布局）里搬到本 Mod 自建的全屏 Control 上再按百分比定位，与「手套」Mod 同一套做法；搬运会触发 ShovelManager._ExitTree，本 Mod 在搬完的当帧就把按钮回调、铲子配置、地图铲子图标、mapControl/mapFeature 全部按宿主原逻辑补齐，铲子手感与判定零改动。"
+    },
+    {
+      "key": "aboutAuthor",
+      "type": "richtext",
+      "label": "作者与链接",
+      "group": "关于",
+      "content": "铲子 · 位置 v1.0.0 · 作者：apples1949\n\n[url=https://space.bilibili.com/186773722]B 站空间[/url]\n[url=https://apples1949.lanzouc.com/b007uuknqd]蓝奏云下载（密码 762b）[/url]\n\n本模组为玩家自制 Mod，与《植物大战僵尸杂交重制版》官方无隶属关系。\n赞助：微信扫码支持作者（见下方收款码图片）。"
+    }
+  ],
+  "runtimeAssembly": "Runtime/ModAssembly.dll",
+  "runtimeEntryType": "ShovelPositionEntry",
+  "runtimeApiVersion": 3,
+  "runtimeAssemblyPolicy": "optional",
+  "blueprints": [],
+  "translations": [],
+  "resources": [
+    "Resources/SponsorQR.png",
+    "Runtime/ModAssembly.dll"
+  ]
+}
