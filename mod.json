@@ -2,7 +2,7 @@
   "schemaVersion": 2,
   "id": "shovelposition",
   "name": "铲子 · 位置",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "postId": "243",
   "author": "apples1949",
   "description": "把战斗界面左上角那把铲子搬到任何你想放的地方：战斗设置页里多一个「铲子 · 设置」按钮，打开后是独立浮层面板，第一行「位置」可选九宫格锚点（左上 / 中上 / … / 右下）或「自定义」百分比坐标（X / Y 滑动条），改动即时生效并写入配置。默认「自动（原位置）」= 完全不动，保持游戏原生位置。横屏竖屏通用一套设置，窗口拉伸 / 旋转后自动按新视口重算。只改铲子按钮的位置与显示，铲子的用法、冷却、判定、地图上跟随鼠标的铲子图标全部保持原样。",
@@ -19,6 +19,16 @@
       "label": "启用铲子位置调整",
       "group": "功能",
       "description": "开（默认）= 按「位置」设置摆放铲子按钮。关 = 完全不动，铲子保持游戏原生位置（战斗中关掉会立刻搬回原位）。",
+      "applyMode": "immediate",
+      "affectsGameplay": false,
+      "default": true
+    },
+    {
+      "key": "hideBeforeStart",
+      "type": "bool",
+      "label": "正式开战前不显示铲子",
+      "group": "功能",
+      "description": "开（默认）= 选卡界面等「还没正式开始」的阶段完全不显示铲子，等选卡完成后再按「位置」出现。关 = 与 v1.0.0 一致（选卡界面也会露出铲子）。",
       "applyMode": "immediate",
       "affectsGameplay": false,
       "default": true

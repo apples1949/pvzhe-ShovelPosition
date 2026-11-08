@@ -80,6 +80,7 @@ public sealed partial class ShovelPositionEntry : IXWModRuntimeEntry
 	private const string KLandMode = "landMode";
 	private const string KLandX = "landX";
 	private const string KLandY = "landY";
+	private const string KHideBeforeStart = "hideBeforeStart";
 	private const string KEnableLog = "enableLog";
 
 	/// <summary>铲子 Feature 的注册名（`TowerDefenseBattleRegistry.cs:33`）。</summary>
@@ -121,6 +122,8 @@ public sealed partial class ShovelPositionEntry : IXWModRuntimeEntry
 
 	/// <summary>战斗跑起来后再等几帧才动手（避免与宿主自己的 Init / _Ready 抢同一帧）。</summary>
 	private const int RunGraceFrames = 6;
+	/// <summary>等"选卡完成"信号的最长帧数（30 秒，纯兜底）。正常路径靠 `packetList` 或 `OnChooseOver` 判定。</summary>
+	private const int StartWaitFrames = 60 * 30;
 
 	// ================================================================ 运行状态
 
@@ -141,6 +144,18 @@ public sealed partial class ShovelPositionEntry : IXWModRuntimeEntry
 	private string _landMode = "auto";
 	private int _landX = 80;
 	private int _landY = 2;
+	/// <summary>v1.0.1：「正式开战前不显示铲子」。选卡阶段宿主会把顶部栏整条拉起（可见），
+	/// 我们把控件搬出来后它就不跟着宿主收起了 ⇒ 选卡界面右下角会冒出一把铲子。
+	/// 开（默认）= 只在选卡完成后再显示；关 = 与 v1.0.0 行为一致。</summary>
+	private bool _hideBeforeStart = true;
+
+	// ── 开战判定（v1.0.1）──
+	/// <summary>本局是否已经"选卡完成/正式开战"。</summary>
+	private bool _battleStarted;
+	/// <summary>已挂上 `OnChooseOver` 的 PacketBank Feature（换关要摘）。</summary>
+	private object _hookedFeature;
+	/// <summary>等待开战信号的帧数（兜底用）。</summary>
+	private int _startWaitFrames;
 
 	// ── 战斗状态 ──
 	/// <summary>当前关卡的 key（`currentLevelConfig.name`），用于识别换关后复位一次性标志。</summary>
@@ -260,6 +275,7 @@ public sealed partial class ShovelPositionEntry : IXWModRuntimeEntry
 			_landMode = NormalizeMode(ReadString(KLandMode, "auto"));
 			_landX = ReadInt(KLandX, 80, 0, 100);
 			_landY = ReadInt(KLandY, 2, 0, 100);
+			_hideBeforeStart = ReadBool(KHideBeforeStart, true);
 			_log = ReadBool(KEnableLog, false);
 		}
 		catch { }
@@ -458,6 +474,10 @@ public sealed partial class ShovelPositionEntry : IXWModRuntimeEntry
 			_mapSpriteLogged = false;
 			_nativeParent = null;
 			_appliedMode = null;
+			// ★ v1.0.1：换关 ⇒ 重新等一次"开战"信号
+			_battleStarted = false;
+			_startWaitFrames = 0;
+			UnhookChooseOver();
 			// 悬浮层**不清空**：旧战斗的节点会随场景一起销毁（`IsInstanceValid` 会失配），
 			// 若控件存活（同一战斗内重开）则 `EnsureOverlay` 会复用它，不会凭空多建一层。
 		}
@@ -486,7 +506,73 @@ public sealed partial class ShovelPositionEntry : IXWModRuntimeEntry
 			return;
 		}
 
-		ApplyPosition(sm, nativeParent);
+		ApplyPosition(sm, nativeParent, IsBattleStarted(ctrl));
+	}
+
+	// ================================================================ 开战判定（v1.0.1）
+
+	/// <summary>
+	/// 本局是否已经"选卡完成 / 正式开战"。
+	/// 选卡阶段宿主会把顶部栏拉起来（`UITopContainer` 播放 Enter，`visible=true`），我们把
+	/// `ShovelManager` 搬出容器后不再受它收起影响 ⇒ 选卡界面会出现一把悬空的铲子（玩家实测截图）。
+	/// 判定顺序：
+	///   ① 没有 PacketBank feature（挑战/IZM 等无选卡环节）⇒ 直接算开战；
+	///   ② feature 声明 `skipPacketChoose` ⇒ 直接算开战；
+	///   ③ 订阅 `OnChooseOver`（宿主"选卡完成"事件），触发即算开战；
+	///   ④ 兜底：等满 `StartWaitFrames` 帧仍没信号（特殊模式），按开战处理，避免铲子永远不出现。
+	/// </summary>
+	private bool IsBattleStarted(TowerDefenseControlNew ctrl)
+	{
+		if (!_hideBeforeStart) { return true; }
+		if (_battleStarted) { return true; }
+		try
+		{
+			TowerDefenseBattleFeaturePacketBank pbf = null;
+			try { pbf = TowerDefenseManager.Instance?.GetPacketBankFeature(); } catch { }
+			if (pbf == null || !GodotObject.IsInstanceValid(pbf)) { _battleStarted = true; return true; }
+			try { if (pbf.skipPacketChoose) { _battleStarted = true; return true; } } catch { }
+
+			if (!ReferenceEquals(_hookedFeature, pbf))
+			{
+				UnhookChooseOver();
+				pbf.OnChooseOver += OnChooseOverHook;
+				_hookedFeature = pbf;
+			}
+
+			// 主判据：选卡完成前 `packetList` 是空的，确认后才出现选中的卡。
+			try
+			{
+				if (pbf.packetList != null && pbf.packetList.Count > 0) { _battleStarted = true; return true; }
+			}
+			catch { }
+		}
+		catch { }
+
+		_startWaitFrames++;
+		if (_startWaitFrames > StartWaitFrames) { _battleStarted = true; return true; }
+		return false;
+	}
+
+	private void OnChooseOverHook()
+	{
+		if (!_battleStarted)
+		{
+			_battleStarted = true;
+			Info("检测到选卡完成（OnChooseOver）⇒ 开始显示铲子。");
+		}
+	}
+
+	private void UnhookChooseOver()
+	{
+		try
+		{
+			if (_hookedFeature is TowerDefenseBattleFeaturePacketBank pbf && GodotObject.IsInstanceValid(pbf))
+			{
+				pbf.OnChooseOver -= OnChooseOverHook;
+			}
+		}
+		catch { }
+		_hookedFeature = null;
 	}
 
 	private void ResetLevelState()
@@ -584,7 +670,7 @@ public sealed partial class ShovelPositionEntry : IXWModRuntimeEntry
 	/// · 其余：把 `ShovelManager` reparent 到**自建全屏 Control**（脱离 HBoxContainer 托管布局），
 	///   再按百分比（0–100）定位 —— 九宫格锚点等价于固定的 (0/50/100, 0/50/100)。
 	/// </summary>
-	private void ApplyPosition(ShovelManager sm, Node nativeParent)
+	private void ApplyPosition(ShovelManager sm, Node nativeParent, bool started)
 	{
 		string mode = NormalizeMode(_landMode);
 		int px = Mathf.Clamp(_landX, 0, 100);
@@ -663,6 +749,10 @@ public sealed partial class ShovelPositionEntry : IXWModRuntimeEntry
 			{
 				show = nativeItem.IsVisibleInTree();
 			}
+			// ★ v1.0.1：**选卡/正式开战前一律不显示**。
+			//   老逻辑只看"顶部栏是否可见"，而选卡界面里顶部栏是可见的（宿主播放 Enter），
+			//   控件被我们搬出容器后不再跟着收起 ⇒ 选卡界面右下角会冒出一把铲子（玩家实测截图）。
+			if (show) { show = started; }
 			if (sm.Visible != show) { sm.Visible = show; }
 		}
 		catch { }
