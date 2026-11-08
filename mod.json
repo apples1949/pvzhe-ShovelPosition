@@ -140,14 +140,14 @@
       "type": "text",
       "label": "更新内容",
       "group": "关于",
-      "content": "v1.0.0 · 2026-11-07\n新增：铲子按钮位置可调（九宫格锚点 / 自定义百分比 X·Y），改动即时生效并写入配置。\n新增：战斗设置页 Mod 按钮列的「铲子·设置」入口 → 本 Mod 独占浮层面板，第一行「位置」+ 第二行「启用位置调整」开关。\n新增：「自动（原位置）」= 完全不动，保持游戏原生位置；关掉总开关会立刻把铲子搬回原位。\n实现：把宿主的 ShovelManager（70×72 的 Control）从顶部道具栏（HBoxContainer 托管布局）里搬到本 Mod 自建的全屏 Control 上再按百分比定位，与「手套」Mod 同一套做法；搬运会触发 ShovelManager._ExitTree，本 Mod 在搬完的当帧就把按钮回调、铲子配置、地图铲子图标、mapControl/mapFeature 全部按宿主原逻辑补齐，铲子手感与判定零改动。"
+      "content": "v1.0.1 · 2026-11-08\n修复：选卡界面（正式开战前）也会露出铲子 —— 控件被搬出自建悬浮层后不再跟随顶部栏收起；现在按「无选卡环节 / skipPacketChoose / OnChooseOver / 30 秒兜底」四路判定，正式开战后才显示。\n新增：「正式开战前不显示铲子」开关（默认开；关 = 回到 v1.0.0 行为）。\n\nv1.0.0 · 2026-11-07\n新增：铲子按钮位置可调（九宫格锚点 / 自定义百分比 X·Y），改动即时生效并写入配置。\n新增：战斗设置页 Mod 按钮列的「铲子·设置」入口 → 本 Mod 独占浮层面板，第一行「位置」+ 第二行「启用位置调整」开关。\n新增：「自动（原位置）」= 完全不动，保持游戏原生位置；关掉总开关会立刻把铲子搬回原位。\n实现：把宿主的 ShovelManager（70×72 的 Control）从顶部道具栏（HBoxContainer 托管布局）里搬到本 Mod 自建的全屏 Control 上再按百分比定位，与「手套」Mod 同一套做法；搬运会触发 ShovelManager._ExitTree，本 Mod 在搬完的当帧就把按钮回调、铲子配置、地图铲子图标、mapControl/mapFeature 全部按宿主原逻辑补齐，铲子手感与判定零改动。"
     },
     {
       "key": "aboutAuthor",
       "type": "richtext",
       "label": "作者与链接",
       "group": "关于",
-      "content": "铲子 · 位置 v1.0.0 · 作者：apples1949\n\n[url=https://space.bilibili.com/186773722]B 站空间[/url]\n[url=https://apples1949.lanzouc.com/b007uuknqd]蓝奏云下载（密码 762b）[/url]\n\n本模组为玩家自制 Mod，与《植物大战僵尸杂交重制版》官方无隶属关系。\n赞助：微信扫码支持作者（见下方收款码图片）。"
+      "content": "铲子 · 位置 v1.0.1 · 作者：apples1949\n\n[url=https://space.bilibili.com/186773722]B 站空间[/url]\n[url=https://apples1949.lanzouc.com/b007uuknqd]蓝奏云下载（密码 762b）[/url]\n\n本模组为玩家自制 Mod，与《植物大战僵尸杂交重制版》官方无隶属关系。\n赞助：微信扫码支持作者（见下方收款码图片）。"
     }
   ],
   "runtimeAssembly": "Runtime/ModAssembly.dll",
